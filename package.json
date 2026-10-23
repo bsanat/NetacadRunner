@@ -7,7 +7,7 @@
     "contributors": ["bsanat"],
     "repository": {
         "type": "git",
-        "url": "https://github.com/bsanat/Netacad-Runner.git"
+        "url": "https://github.com/bsanat/NetacadRunner.git"
     },
     "type": "module",
     "scripts": {

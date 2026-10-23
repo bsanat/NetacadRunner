@@ -24,7 +24,7 @@
 
 ## Установка в Chrome
 
-1. На странице [bsanat/Netacad-Runner](https://github.com/bsanat/Netacad-Runner) нажмите **Code → Download ZIP**.
+1. На странице [bsanat/NetacadRunner](https://github.com/bsanat/NetacadRunner) нажмите **Code → Download ZIP**.
 2. Распакуйте ZIP и оставьте распакованную папку на компьютере. Готовые файлы расширения уже включены; сборка для установки не нужна.
 3. Откройте `chrome://extensions` и отключите старое расширение NetAcad AutoRunner или прежнюю версию Netacad-Runner, если оно установлено.
 4. Включите **Режим разработчика**.
