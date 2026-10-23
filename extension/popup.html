@@ -1,0 +1,70 @@
+<!--
+    netacad-automation
+    Copyright (C) 2026 Saurabh Kumar Yadav
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Netacad-Runner</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <p class="eyebrow">Помощник для курсов</p>
+    <h1>Netacad-Runner</h1>
+    <p id="state" class="state" role="status" aria-live="polite">Ожидание</p>
+  </header>
+
+  <main>
+  <div class="course-card">
+  <label class="field" for="course">Курс</label>
+  <select id="course">
+    <option value="ccna1">CCNA 1 — Введение в сети</option>
+    <option value="ccna2">CCNA 2 — Коммутация, маршрутизация и Wi-Fi</option>
+    <option value="ccna3">CCNA 3 — Корпоративные сети и безопасность</option>
+    <option value="python1">Основы Python 1</option>
+    <option value="python2">Основы Python 2</option>
+    <option value="data">Основы анализа данных</option>
+    <option value="cybersecurity">Введение в кибербезопасность</option>
+  </select>
+
+  <div class="actions">
+    <button type="button" id="start" class="btn primary">Запустить</button>
+    <button type="button" id="stop" class="btn" disabled>Остановить</button>
+  </div>
+  </div>
+
+  <section class="log" aria-label="Журнал действий">
+    <h2>Журнал действий</h2>
+    <ul id="log"></ul>
+  </section>
+
+  <p id="hint" class="hint" role="status" aria-live="polite">Сначала откройте вкладку курса на www.netacad.com.</p>
+  </main>
+
+  <footer>
+    <a class="author" href="https://github.com/bsanat" target="_blank" rel="noopener noreferrer" aria-label="GitHub — bsanat">
+      <img src="icons/github.svg" width="20" height="20" alt="">
+      <span>by <strong>bsanat</strong></span>
+    </a>
+  </footer>
+
+  <script src="popup.js"></script>
+</body>
+</html>

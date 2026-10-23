@@ -1,0 +1,182 @@
+/*
+    netacad-automation
+    Copyright (C) 2026 Saurabh Kumar Yadav
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  width: 380px;
+  font: 13px/1.5 system-ui, -apple-system, sans-serif;
+  color: #172d50;
+  background: #edf3ff;
+}
+
+header {
+  padding: 24px 22px 21px;
+  color: #fff;
+  background: linear-gradient(125deg, #123a87, #2563eb);
+  border-radius: 0 0 24px 24px;
+}
+
+.eyebrow {
+  margin: 0 0 6px;
+  color: #d5e5ff;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.7px;
+}
+
+.state {
+  display: inline-block;
+  margin: 12px 0 0;
+  padding: 4px 11px;
+  border: 1px solid #ffffff40;
+  border-radius: 20px;
+  color: #fff;
+  background: #ffffff1a;
+  font-size: 11px;
+}
+
+.state.off { color: #e0ebff; }
+.state.err { color: #fff; background: #8e243d; border-color: #ffb4c2; }
+
+main { padding: 18px 18px 0; }
+
+.course-card, .log {
+  padding: 16px;
+  border: 1px solid #dbe6fa;
+  border-radius: 16px;
+  background: #fff;
+}
+
+.field, h2 {
+  display: block;
+  margin: 0 0 9px;
+  color: #52678b;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #c6d7f4;
+  border-radius: 9px;
+  background: #f5f8ff;
+  color: #172d50;
+  font: inherit;
+  font-size: 12px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 13px;
+}
+
+.btn {
+  flex: 1;
+  min-height: 40px;
+  padding: 9px 8px;
+  border: 1px solid #c6d7f4;
+  border-radius: 9px;
+  background: #edf3ff;
+  color: #254d8a;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn:hover:not(:disabled) { background: #dce8ff; }
+.btn:disabled { opacity: 0.5; cursor: default; }
+.btn.primary { border-color: #245fe2; background: #245fe2; color: #fff; }
+.btn.primary:hover:not(:disabled) { background: #174cc5; }
+
+:is(.btn, select, .author):focus-visible {
+  outline: 3px solid #60a5fa;
+  outline-offset: 3px;
+}
+
+.log { margin-top: 12px; }
+h2 { text-transform: uppercase; font-size: 10px; letter-spacing: 0.08em; }
+
+.log ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  min-height: 62px;
+  max-height: 132px;
+  overflow-y: auto;
+}
+
+.log li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  margin-bottom: 5px;
+  border-radius: 8px;
+  background: #f0f5ff;
+  color: #315383;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.log li::before {
+  content: '';
+  flex: 0 0 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #3675e8;
+}
+
+.hint { margin: 12px 4px 0; color: #52678b; font-size: 11px; }
+.hint.hidden { display: none; }
+
+footer {
+  display: flex;
+  justify-content: center;
+  padding: 18px;
+}
+
+.author {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  color: #47648f;
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.author:hover { background: #dce8ff; color: #173f82; }
+.author img { opacity: 0.8; }
+.author strong { color: #1c4589; font-weight: 650; }

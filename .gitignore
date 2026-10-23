@@ -1,0 +1,6 @@
+node_modules/
+.DS_Store
+*.log
+scraper/logs/
+data/.variables_*.sync.mjs
+*.zip

@@ -1,0 +1,33 @@
+{
+    "name": "netacad-runner",
+    "version": "1.0.2",
+    "description": "Netacad-Runner: русскоязычный помощник для курсов NetAcad",
+    "license": "GPL-3.0-or-later",
+    "author": "Saurabh Kumar Yadav",
+    "contributors": ["bsanat"],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/bsanat/Netacad-Runner.git"
+    },
+    "type": "module",
+    "scripts": {
+        "scrape:cyu": "node scraper/cyu-scrape.js",
+        "scrape:exam": "node scraper/exam-scrape.js",
+        "scrape:quiz": "node scraper/quiz-scrape.js",
+        "scrape:practice": "node scraper/practice-scrape.js",
+        "scrape:infraexam": "node scraper/infraexam-scrape.js",
+        "probe": "node tools/browser-probe.js",
+        "build:runner": "node scripts/build-runner.js",
+        "build:extension": "node scripts/build-extension.js",
+        "build": "npm run build:runner && npm run build:extension",
+        "sync:python1": "node tools/sync-python1-questions.js",
+        "sync:python2": "node tools/sync-python2-questions.js",
+        "test": "node --test tests/*.test.js"
+    },
+    "dependencies": {
+        "puppeteer-core": "^24.32.1"
+    },
+    "devDependencies": {
+        "esbuild": "^0.28.0"
+    }
+}
