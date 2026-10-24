@@ -52,7 +52,7 @@ test('video is processed only after its real ended event', t => {
     const { video, runtime, processed, start } = setup(t);
     start();
     assert.equal(video.muted, true);
-    assert.deepEqual(video.seeks, [119.75]);
+    assert.deepEqual(video.seeks, [117.5]);
     assert.equal(processed.has(video), false);
     assert.equal(runtime.isPaused, true);
     video.ended = true;
@@ -96,7 +96,7 @@ test('metadata and duration changes seek once and never to infinity', t => {
     video.dispatchEvent(new Event('durationchange'));
     video.dispatchEvent(new Event('loadedmetadata'));
     video.dispatchEvent(new Event('playing'));
-    assert.deepEqual(video.seeks, [29.75]);
+    assert.deepEqual(video.seeks, [27.5]);
 });
 
 test('rejected autoplay releases the loop and allows retry after cooldown', async t => {
@@ -162,11 +162,67 @@ function contentFixture(video) {
     };
     const assessment = {
         elementVisibilityRatio: () => 1,
-        isElementSubstantiallyVisible: () => true,
+        isElementSubstantiallyVisible: el => el.visible !== false,
         isAssessmentResultVisible: () => false,
     };
     return { doc, win, content: createContentHelpers(doc, win, assessment) };
 }
+
+function posterFixture() {
+    const { doc, content } = contentFixture(null);
+    let nativeVideo = null;
+    let clicks = 0;
+    const poster = {
+        busy: false,
+        getAttribute: () => String(poster.busy),
+    };
+    const container = { querySelector: () => nativeVideo };
+    const button = {
+        disabled: false,
+        visible: true,
+        closest: selector => selector === '.media-poster' ? poster : container,
+        click() { clicks++; },
+    };
+    doc.querySelectorAll = selector => {
+        if (selector === '.media-poster .vjs-big-play-button') return [button];
+        if (selector === 'video') return nativeVideo ? [nativeVideo] : [];
+        return [];
+    };
+    return { content, poster, button, clicks: () => clicks, load: () => { nativeVideo = new Video(); } };
+}
+
+test('lazy poster opens even though no native video exists yet', () => {
+    const { content, clicks } = posterFixture();
+    assert.equal(content.getNextPendingVideo(new Set()), null);
+    assert.equal(content.tryOpenVideo(), true);
+    assert.equal(clicks(), 1);
+});
+
+test('lazy poster waits during loading, throttles retries and yields to native video', t => {
+    t.mock.timers.enable({ apis: ['Date'] });
+    const { content, poster, button, clicks, load } = posterFixture();
+    content.tryOpenVideo();
+    assert.equal(content.tryOpenVideo(), true);
+    assert.equal(clicks(), 1);
+    t.mock.timers.tick(5000);
+    poster.busy = true;
+    button.disabled = true;
+    assert.equal(content.tryOpenVideo(), true);
+    assert.equal(clicks(), 1);
+    poster.busy = false;
+    button.disabled = false;
+    content.tryOpenVideo();
+    assert.equal(clicks(), 2);
+    load();
+    assert.equal(content.tryOpenVideo(), false);
+});
+
+test('lazy poster outside the visible area is not clicked', () => {
+    const { content, button, clicks } = posterFixture();
+    button.visible = false;
+    assert.equal(content.tryOpenVideo(), false);
+    assert.equal(clicks(), 0);
+});
 
 test('player cover is eligible even when the native video has no size yet', () => {
     const video = new Video();

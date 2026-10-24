@@ -429,6 +429,10 @@ export function createMainLoop(doc, win, databases) {
         }
 
         if (!runtime.isVideoActive) {
+            if (content.tryOpenVideo()) {
+                scheduleNextTick(TICK_MS_ASSESSMENT);
+                return;
+            }
             const pendingVideo = content.getNextPendingVideo(processedVideos);
             if (pendingVideo && content.handleVideoTick(pendingVideo, processedVideos, runtime)) {
                 scheduleNextTick(getTickDelay());

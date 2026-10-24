@@ -46,7 +46,7 @@ export function skipVideo(video, player, runtime, processedVideos) {
     const seek = () => {
         if (!active || sought || video.paused || !Number.isFinite(video.duration) || video.duration <= 0) return;
         try {
-            video.currentTime = Math.max(0, video.duration - 0.25);
+            video.currentTime = Math.max(0, video.duration - 2.5);
             sought = true;
         } catch {
             finish(false, 'Video error');

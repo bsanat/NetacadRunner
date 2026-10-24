@@ -19,9 +19,30 @@
 import { BOTTOM_PERCENT } from './config.js';
 import { deepQuerySelectorAll, getTopDocument } from './dom.js';
 import { getVideoPlayer, skipVideo } from './video.js';
+import { setStatus } from './status.js';
 
 export function createContentHelpers(doc, win, assessment) {
     const { elementVisibilityRatio, isElementSubstantiallyVisible, isAssessmentResultVisible, isOnQuestionSlide } = assessment;
+    const posterAttempts = new WeakMap();
+
+    function tryOpenVideo() {
+        for (const button of deepQuerySelectorAll('.media-poster .vjs-big-play-button', doc)) {
+            const container = button.closest('.video-container');
+            if (!container || container.querySelector('video')) continue;
+            if (!isElementSubstantiallyVisible(button, 0.35)) continue;
+
+            const poster = button.closest('.media-poster');
+            const lastClick = posterAttempts.get(button);
+            setStatus('Video waiting');
+            if (!button.disabled && poster.getAttribute('aria-busy') !== 'true' &&
+                (lastClick === undefined || Date.now() - lastClick >= 5000)) {
+                posterAttempts.set(button, Date.now());
+                button.click();
+            }
+            return true;
+        }
+        return false;
+    }
 
     function getVideosInOrder() {
         return deepQuerySelectorAll('video', doc);
@@ -235,6 +256,7 @@ export function createContentHelpers(doc, win, assessment) {
     }
 
     return {
+        tryOpenVideo,
         getNextPendingVideo,
         shouldInteractWithVideo,
         createScrollState,

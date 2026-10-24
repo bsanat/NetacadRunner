@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Netacad-Runner",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Помощник для курсов NetAcad: навигация, работа с видео и базы ответов.",
   "icons": {
     "16": "icons/icon-16.png",

@@ -1614,7 +1614,7 @@
     const seek = () => {
       if (!active || sought || video.paused || !Number.isFinite(video.duration) || video.duration <= 0) return;
       try {
-        video.currentTime = Math.max(0, video.duration - 0.25);
+        video.currentTime = Math.max(0, video.duration - 2.5);
         sought = true;
       } catch {
         finish(false, "Video error");
@@ -1654,6 +1654,23 @@
   }
   function createContentHelpers(doc, win, assessment) {
     const { elementVisibilityRatio, isElementSubstantiallyVisible, isAssessmentResultVisible, isOnQuestionSlide } = assessment;
+    const posterAttempts = /* @__PURE__ */ new WeakMap();
+    function tryOpenVideo() {
+      for (const button of deepQuerySelectorAll(".media-poster .vjs-big-play-button", doc)) {
+        const container = button.closest(".video-container");
+        if (!container || container.querySelector("video")) continue;
+        if (!isElementSubstantiallyVisible(button, 0.35)) continue;
+        const poster = button.closest(".media-poster");
+        const lastClick = posterAttempts.get(button);
+        setStatus("Video waiting");
+        if (!button.disabled && poster.getAttribute("aria-busy") !== "true" && (lastClick === void 0 || Date.now() - lastClick >= 5e3)) {
+          posterAttempts.set(button, Date.now());
+          button.click();
+        }
+        return true;
+      }
+      return false;
+    }
     function getVideosInOrder() {
       return deepQuerySelectorAll("video", doc);
     }
@@ -1834,6 +1851,7 @@
       return skipVideo(video, getVideoPlayer(video), runtime, processedVideos);
     }
     return {
+      tryOpenVideo,
       getNextPendingVideo,
       shouldInteractWithVideo,
       createScrollState,
@@ -2440,6 +2458,10 @@
         }
       }
       if (!runtime.isVideoActive) {
+        if (content.tryOpenVideo()) {
+          scheduleNextTick(TICK_MS_ASSESSMENT);
+          return;
+        }
         const pendingVideo = content.getNextPendingVideo(processedVideos);
         if (pendingVideo && content.handleVideoTick(pendingVideo, processedVideos, runtime)) {
           scheduleNextTick(getTickDelay());
