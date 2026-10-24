@@ -173,6 +173,10 @@ npm test
 
 </details>
 
+## Поддержать проект
+
+Если Netacad-Runner оказался полезен, нажмите **⭐ Star** в правом верхнем углу страницы репозитория. Это простой способ сказать **«спасибо»** и поддержать проект.
+
 ## Авторство и лицензия
 
 Основано на [netacad-automation](https://github.com/yadavsaurabh1/netacad-automation) — Copyright (C) 2026 **Saurabh Kumar Yadav**. Исходные уведомления об авторстве сохранены.
