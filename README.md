@@ -189,6 +189,4 @@ npm test
 
 ---
 
-by Sanat Bogenbayev
-
 <p align="center">by <a href="https://github.com/bsanat"><strong>bsanat</strong></a></p>
