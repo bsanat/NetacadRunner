@@ -132,8 +132,18 @@ export function isMatchingDropdownComplete(qContainer) {
     return required > 0 && done === required;
 }
 
-export function isQuestionAnswered(qContainer) {
+export function isQuestionAnswered(qContainer, correctAnswers = []) {
     if (isMatchingDropdownComplete(qContainer)) return true;
+    const checkboxes = deepQuerySelectorAll('input[type="checkbox"]', qContainer);
+    if (checkboxes.length) {
+        const questionText = getQuestionBodyEl(qContainer)?.textContent || '';
+        const required = expectedSelectionCount(questionText, correctAnswers);
+        const selected = checkboxes.filter(input => input.checked).length;
+        if (!correctAnswers.length) return required > 0 ? selected === required : selected > 0;
+        if (selected !== required) return false;
+        const options = deepQuerySelectorAll('.mcq__item, .js-mcq-item', qContainer);
+        return hasCorrectMcqSelection(options, correctAnswers, required);
+    }
     if (deepQuerySelectorAll('input:checked', qContainer).length > 0) return true;
 
     const selects = deepQuerySelectorAll('select', qContainer);
@@ -160,7 +170,7 @@ export function shouldTreatAsManual(entry, qContainer) {
 }
 
 export function waitForManualCompletion(qContainer, doc, entry) {
-    const userDone = isQuestionAnswered(qContainer) || isSubmitEnabled(doc);
+    const userDone = isQuestionAnswered(qContainer, entry?.answers) || isSubmitEnabled(doc);
     if (!userDone) {
         if (!qContainer.dataset.manualWarned) {
             qContainer.dataset.manualWarned = 'true';
@@ -247,7 +257,7 @@ function rateMcqOptions(options, correctAnswers) {
     return rated;
 }
 
-function clickMcqOption(opt) {
+function clickMcqOption(opt, checked = true) {
     const input = deepQuerySelectorAll('input[type="radio"], input[type="checkbox"]', opt)[0] ||
         opt.querySelector('input[type="radio"], input[type="checkbox"]');
     const label = deepQuerySelectorAll('label', opt)[0] || opt.querySelector('label');
@@ -255,8 +265,8 @@ function clickMcqOption(opt) {
     else if (input) input.click();
     else opt.click();
 
-    if (input && !input.checked) {
-        input.checked = true;
+    if (input && input.checked !== checked) {
+        input.checked = checked;
         input.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
         input.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
     }
@@ -327,7 +337,8 @@ function hasCorrectMcqSelection(options, correctAnswers, maxSelect) {
 }
 
 export function selectMcqOptions(qContainer, correctAnswers, questionText, opts = {}) {
-    const needCount = expectedSelectionCount(questionText, correctAnswers);
+    const rawQuestion = getQuestionBodyEl(qContainer)?.textContent || questionText;
+    const needCount = expectedSelectionCount(rawQuestion, correctAnswers);
     const multiClick = opts.multiClick ?? needCount > 1;
     const options = deepQuerySelectorAll('.mcq__item, .js-mcq-item', qContainer);
     const isRadioGroup = !!deepQuerySelectorAll('[role="radiogroup"]', qContainer).length ||
@@ -339,10 +350,21 @@ export function selectMcqOptions(qContainer, correctAnswers, questionText, opts 
     const toSelect = getOptionsToSelect(options, correctAnswers, maxSelect);
 
     if (!toSelect.length) return false;
+    if (toSelect.length === maxSelect) {
+        const targets = new Set(toSelect.map(row => row.opt));
+        for (const opt of options) {
+            const input = deepQuerySelectorAll('input[type="checkbox"]', opt)[0];
+            if (input?.checked && !targets.has(opt)) {
+                clickMcqOption(opt, false);
+                return true;
+            }
+        }
+    }
     if (hasCorrectMcqSelection(options, correctAnswers, maxSelect)) return false;
 
     let clicked = false;
     for (const { opt } of toSelect) {
+        if (opt.isConnected === false) break;
         const input = deepQuerySelectorAll('input', opt)[0] || opt.querySelector('input');
         if (input && input.checked) continue;
         clickMcqOption(opt);
@@ -360,7 +382,7 @@ export function isSubmitEnabled(doc) {
 }
 
 export function trySubmitAndAdvance(doc, qContainer = null, opts = {}) {
-    const answered = !qContainer || isQuestionAnswered(qContainer);
+    const answered = !qContainer || isQuestionAnswered(qContainer, opts.correctAnswers);
     const scope = qContainer?.closest?.('.js-abs-block-container, .abs__container, .assessment-1q') ||
         qContainer || doc;
 

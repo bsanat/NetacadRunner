@@ -166,7 +166,7 @@ export function expectedSelectionCount(questionText, correctAnswers) {
     const q = normalizeText(questionText || '');
     const chooseMatch = q.match(CHOOSE_COUNT_RE);
     if (chooseMatch) {
-        const map = { two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, all: correctAnswers.length };
+        const map = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, all: correctAnswers.length };
         return map[chooseMatch[1]] || correctAnswers.length;
     }
     return correctAnswers.length;

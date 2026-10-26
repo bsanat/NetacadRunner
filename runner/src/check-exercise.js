@@ -32,11 +32,15 @@ function findBlockRoot(checkView) {
         checkView.parentElement;
 }
 
-function blockMcqsReady(block, assessment) {
+function blockMcqsReady(block, doc, databases, assessment) {
+    const activeDb = databases.getActiveDb(doc);
     for (const mcq of deepQuerySelectorAll('mcq-view', block)) {
         const body = getQuestionBodyEl(mcq);
         if (!body || assessment.elementVisibilityRatio(body) < 0.15) continue;
-        if (!isQuestionAnswered(mcq)) return false;
+        const entry = activeDb.ready
+            ? databases.lookupEntryCached(activeDb, extractCleanText(body), extractQuestionCodeText(mcq))
+            : null;
+        if (!isQuestionAnswered(mcq, entry?.answers)) return false;
     }
     return true;
 }
@@ -47,14 +51,13 @@ function answerBlockMcqs(block, doc, databases, assessment) {
 
     let acted = false;
     for (const mcq of deepQuerySelectorAll('mcq-view', block)) {
-        if (isQuestionAnswered(mcq)) continue;
-
         const body = getQuestionBodyEl(mcq);
         if (!body || assessment.elementVisibilityRatio(body) < 0.15) continue;
 
         const qText = extractCleanText(body);
         const qCode = extractQuestionCodeText(mcq);
         const entry = databases.lookupEntryCached(activeDb, qText, qCode);
+        if (isQuestionAnswered(mcq, entry?.answers)) continue;
         if (entry && !shouldTreatAsManual(entry, mcq) &&
             solveQuestion(mcq, entry, qText, doc, false)) {
             acted = true;
@@ -82,7 +85,7 @@ export function tryHandleCheckExercise(doc, databases, assessment) {
         if (answerBlockMcqs(block, doc, databases, assessment)) {
             return true;
         }
-        if (!blockMcqsReady(block, assessment)) continue;
+        if (!blockMcqsReady(block, doc, databases, assessment)) continue;
 
         return tryClickCheckViewButton(checkView, btn);
     }

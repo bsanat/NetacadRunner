@@ -16,9 +16,9 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-export const SCROLL_PERCENTAGE = 0.25;
+export const SCROLL_PERCENTAGE = 0.5;
 export const BOTTOM_PERCENT = 99;
-export const TICK_MS_SCROLL = 350;
+export const TICK_MS_SCROLL = 150;
 export const TICK_MS_ASSESSMENT = 500;
 export const TICK_MS_AFTER_ACTION = 300;
 export const TICK_MS_POST_ACTION_POLL = 300;

@@ -302,6 +302,7 @@ export function createMainLoop(doc, win, databases) {
                 }
 
                 const entry = databases.lookupEntryCached(activeDb, qText, qCode);
+                submitOpts.correctAnswers = entry?.answers;
 
                 if (!entry) {
                     if (!qContainer.dataset.warned) {
@@ -348,7 +349,7 @@ export function createMainLoop(doc, win, databases) {
                 }
 
                 if (acted) {
-                    if (isQuestionAnswered(qContainer) &&
+                    if (isQuestionAnswered(qContainer, entry.answers) &&
                         trySubmitAndAdvance(doc, qContainer, submitOpts)) {
                         setStatus('Check');
                         bumpCooldown();
@@ -357,7 +358,7 @@ export function createMainLoop(doc, win, databases) {
                     scheduleAssessmentPoll();
                     return;
                 }
-                if (!isQuestionAnswered(qContainer)) {
+                if (!isQuestionAnswered(qContainer, entry.answers)) {
                     scheduleAssessmentPoll();
                     return;
                 }

@@ -1,0 +1,36 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { createMainLoop } from '../runner/src/loop.js';
+
+test('a long lesson reaches the bottom within three seconds and Stop cancels scrolling', t => {
+    t.mock.timers.enable({ apis: ['setTimeout', 'Date'] });
+    const steps = [];
+    const doc = {
+        documentElement: { scrollHeight: 8000, clientHeight: 800 },
+        body: { scrollHeight: 8000 },
+        querySelector: () => null, querySelectorAll: () => [],
+    };
+    const win = {
+        innerHeight: 800, innerWidth: 1200, scrollY: 0,
+        __netacadSetStatus() {}, top: { document: doc },
+        scrollBy({ top, behavior }) {
+            assert.equal(behavior, 'instant');
+            assert(top <= this.innerHeight / 2, 'keep overlap between viewports');
+            steps.push(top);
+            this.scrollY = Math.min(this.scrollY + top, 7200);
+        },
+    };
+    globalThis.window = win;
+    globalThis.document = doc;
+    const loop = createMainLoop(doc, win, {});
+    t.after(() => loop.stop());
+    loop.start();
+    for (let elapsed = 0; elapsed < 3000; elapsed += 50) t.mock.timers.tick(50);
+    assert.equal(win.scrollY, 7200);
+    assert(steps.length > 1);
+    loop.stop();
+    const stoppedAt = steps.length;
+    t.mock.timers.tick(1000);
+    assert.equal(steps.length, stoppedAt);
+});

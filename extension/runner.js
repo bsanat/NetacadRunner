@@ -192,7 +192,7 @@ window.__NETACAD_EXTENSION=true;
     const q = normalizeText(questionText || "");
     const chooseMatch = q.match(CHOOSE_COUNT_RE);
     if (chooseMatch) {
-      const map = { two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, all: correctAnswers.length };
+      const map = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, all: correctAnswers.length };
       return map[chooseMatch[1]] || correctAnswers.length;
     }
     return correctAnswers.length;
@@ -341,9 +341,9 @@ window.__NETACAD_EXTENSION=true;
       };
     });
   }
-  var SCROLL_PERCENTAGE = 0.25;
+  var SCROLL_PERCENTAGE = 0.5;
   var BOTTOM_PERCENT = 99;
-  var TICK_MS_SCROLL = 350;
+  var TICK_MS_SCROLL = 150;
   var TICK_MS_ASSESSMENT = 500;
   var TICK_MS_AFTER_ACTION = 300;
   var TICK_MS_POST_ACTION_POLL = 300;
@@ -918,8 +918,18 @@ window.__NETACAD_EXTENSION=true;
     }
     return required > 0 && done === required;
   }
-  function isQuestionAnswered(qContainer) {
+  function isQuestionAnswered(qContainer, correctAnswers = []) {
     if (isMatchingDropdownComplete(qContainer)) return true;
+    const checkboxes = deepQuerySelectorAll('input[type="checkbox"]', qContainer);
+    if (checkboxes.length) {
+      const questionText = getQuestionBodyEl(qContainer)?.textContent || "";
+      const required = expectedSelectionCount(questionText, correctAnswers);
+      const selected = checkboxes.filter((input) => input.checked).length;
+      if (!correctAnswers.length) return required > 0 ? selected === required : selected > 0;
+      if (selected !== required) return false;
+      const options = deepQuerySelectorAll(".mcq__item, .js-mcq-item", qContainer);
+      return hasCorrectMcqSelection(options, correctAnswers, required);
+    }
     if (deepQuerySelectorAll("input:checked", qContainer).length > 0) return true;
     const selects = deepQuerySelectorAll("select", qContainer);
     if (selects.length > 0) {
@@ -941,7 +951,7 @@ window.__NETACAD_EXTENSION=true;
     return false;
   }
   function waitForManualCompletion(qContainer, doc, entry) {
-    const userDone = isQuestionAnswered(qContainer) || isSubmitEnabled(doc);
+    const userDone = isQuestionAnswered(qContainer, entry?.answers) || isSubmitEnabled(doc);
     if (!userDone) {
       if (!qContainer.dataset.manualWarned) {
         qContainer.dataset.manualWarned = "true";
@@ -1016,14 +1026,14 @@ window.__NETACAD_EXTENSION=true;
     }
     return rated;
   }
-  function clickMcqOption(opt) {
+  function clickMcqOption(opt, checked = true) {
     const input = deepQuerySelectorAll('input[type="radio"], input[type="checkbox"]', opt)[0] || opt.querySelector('input[type="radio"], input[type="checkbox"]');
     const label = deepQuerySelectorAll("label", opt)[0] || opt.querySelector("label");
     if (label) label.click();
     else if (input) input.click();
     else opt.click();
-    if (input && !input.checked) {
-      input.checked = true;
+    if (input && input.checked !== checked) {
+      input.checked = checked;
       input.dispatchEvent(new Event("change", { bubbles: true, composed: true }));
       input.dispatchEvent(new Event("input", { bubbles: true, composed: true }));
     }
@@ -1083,7 +1093,8 @@ window.__NETACAD_EXTENSION=true;
     return countCheckedMatchingOptions(options, correctAnswers, maxSelect) >= maxSelect;
   }
   function selectMcqOptions(qContainer, correctAnswers, questionText, opts = {}) {
-    const needCount = expectedSelectionCount(questionText, correctAnswers);
+    const rawQuestion = getQuestionBodyEl(qContainer)?.textContent || questionText;
+    const needCount = expectedSelectionCount(rawQuestion, correctAnswers);
     const multiClick = opts.multiClick ?? needCount > 1;
     const options = deepQuerySelectorAll(".mcq__item, .js-mcq-item", qContainer);
     const isRadioGroup = !!deepQuerySelectorAll('[role="radiogroup"]', qContainer).length || options.length > 0 && options.every((opt) => {
@@ -1093,9 +1104,20 @@ window.__NETACAD_EXTENSION=true;
     const maxSelect = isRadioGroup ? 1 : needCount;
     const toSelect = getOptionsToSelect(options, correctAnswers, maxSelect);
     if (!toSelect.length) return false;
+    if (toSelect.length === maxSelect) {
+      const targets = new Set(toSelect.map((row) => row.opt));
+      for (const opt of options) {
+        const input = deepQuerySelectorAll('input[type="checkbox"]', opt)[0];
+        if (input?.checked && !targets.has(opt)) {
+          clickMcqOption(opt, false);
+          return true;
+        }
+      }
+    }
     if (hasCorrectMcqSelection(options, correctAnswers, maxSelect)) return false;
     let clicked = false;
     for (const { opt } of toSelect) {
+      if (opt.isConnected === false) break;
       const input = deepQuerySelectorAll("input", opt)[0] || opt.querySelector("input");
       if (input && input.checked) continue;
       clickMcqOption(opt);
@@ -1111,7 +1133,7 @@ window.__NETACAD_EXTENSION=true;
     );
   }
   function trySubmitAndAdvance(doc, qContainer = null, opts = {}) {
-    const answered = !qContainer || isQuestionAnswered(qContainer);
+    const answered = !qContainer || isQuestionAnswered(qContainer, opts.correctAnswers);
     const scope = qContainer?.closest?.(".js-abs-block-container, .abs__container, .assessment-1q") || qContainer || doc;
     if (answered && opts.elementVisibilityRatio) {
       if (tryClickVisibleCheck(doc, scope, {
@@ -1921,6 +1943,7 @@ window.__NETACAD_EXTENSION=true;
       const entry = databases.lookupEntryCached(activeDb, ctx.questionText, ctx.code);
       if (entry && !shouldTreatAsManual(entry, mcq)) {
         solveQuestion(mcq, entry, ctx.questionText, doc, false);
+        if (!isQuestionAnswered(mcq, entry.answers)) return true;
       }
     }
     return tryClickCheckViewButton(ctx.checkView, ctx.button);
@@ -1928,11 +1951,13 @@ window.__NETACAD_EXTENSION=true;
   function findBlockRoot(checkView) {
     return checkView.closest("block-view, article-view, .component__widget, .abs__block") || checkView.parentElement;
   }
-  function blockMcqsReady(block, assessment) {
+  function blockMcqsReady(block, doc, databases, assessment) {
+    const activeDb = databases.getActiveDb(doc);
     for (const mcq of deepQuerySelectorAll("mcq-view", block)) {
       const body = getQuestionBodyEl(mcq);
       if (!body || assessment.elementVisibilityRatio(body) < 0.15) continue;
-      if (!isQuestionAnswered(mcq)) return false;
+      const entry = activeDb.ready ? databases.lookupEntryCached(activeDb, extractCleanText(body), extractQuestionCodeText(mcq)) : null;
+      if (!isQuestionAnswered(mcq, entry?.answers)) return false;
     }
     return true;
   }
@@ -1941,12 +1966,12 @@ window.__NETACAD_EXTENSION=true;
     if (!activeDb.ready) return false;
     let acted = false;
     for (const mcq of deepQuerySelectorAll("mcq-view", block)) {
-      if (isQuestionAnswered(mcq)) continue;
       const body = getQuestionBodyEl(mcq);
       if (!body || assessment.elementVisibilityRatio(body) < 0.15) continue;
       const qText = extractCleanText(body);
       const qCode = extractQuestionCodeText(mcq);
       const entry = databases.lookupEntryCached(activeDb, qText, qCode);
+      if (isQuestionAnswered(mcq, entry?.answers)) continue;
       if (entry && !shouldTreatAsManual(entry, mcq) && solveQuestion(mcq, entry, qText, doc, false)) {
         acted = true;
       }
@@ -1966,7 +1991,7 @@ window.__NETACAD_EXTENSION=true;
       if (answerBlockMcqs(block, doc, databases, assessment)) {
         return true;
       }
-      if (!blockMcqsReady(block, assessment)) continue;
+      if (!blockMcqsReady(block, doc, databases, assessment)) continue;
       return tryClickCheckViewButton(checkView, btn);
     }
     return false;
@@ -2350,6 +2375,7 @@ window.__NETACAD_EXTENSION=true;
             return;
           }
           const entry = databases.lookupEntryCached(activeDb, qText, qCode);
+          submitOpts.correctAnswers = entry?.answers;
           if (!entry) {
             if (!qContainer.dataset.warned) {
               qContainer.dataset.warned = "true";
@@ -2391,7 +2417,7 @@ window.__NETACAD_EXTENSION=true;
             bumpCooldown();
           }
           if (acted) {
-            if (isQuestionAnswered(qContainer) && trySubmitAndAdvance(doc, qContainer, submitOpts)) {
+            if (isQuestionAnswered(qContainer, entry.answers) && trySubmitAndAdvance(doc, qContainer, submitOpts)) {
               setStatus("Check");
               bumpCooldown();
               invalidateShadowCache();
@@ -2399,7 +2425,7 @@ window.__NETACAD_EXTENSION=true;
             scheduleAssessmentPoll();
             return;
           }
-          if (!isQuestionAnswered(qContainer)) {
+          if (!isQuestionAnswered(qContainer, entry.answers)) {
             scheduleAssessmentPoll();
             return;
           }

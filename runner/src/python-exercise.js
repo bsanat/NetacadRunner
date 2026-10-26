@@ -101,6 +101,7 @@ export function tryHandlePythonExercise(doc, databases, assessment) {
         const entry = databases.lookupEntryCached(activeDb, ctx.questionText, ctx.code);
         if (entry && !shouldTreatAsManual(entry, mcq)) {
             solveQuestion(mcq, entry, ctx.questionText, doc, false);
+            if (!isQuestionAnswered(mcq, entry.answers)) return true;
         }
     }
 

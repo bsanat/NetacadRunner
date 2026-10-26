@@ -18,7 +18,7 @@
 
 # Расширение Netacad-Runner
 
-Версия 1.0.3 для Chrome, Manifest V3. Русскоязычная версия [netacad-automation](https://github.com/yadavsaurabh1/netacad-automation) для [www.netacad.com](https://www.netacad.com). Изменённую версию поддерживает [bsanat](https://github.com/bsanat).
+Версия 1.0.4 для Chrome, Manifest V3. Русскоязычная версия [netacad-automation](https://github.com/yadavsaurabh1/netacad-automation) для [www.netacad.com](https://www.netacad.com). Изменённую версию поддерживает [bsanat](https://github.com/bsanat).
 
 ## Установка
 
