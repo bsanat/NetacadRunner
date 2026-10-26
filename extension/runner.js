@@ -17,6 +17,8 @@
 */
 window.__NETACAD_EXTENSION=true;
 (() => {
+  // package.json
+  var version = "1.0.5";
   var GUARD_KEY = "__netacadDownloadGuardInstalled";
   var DOWNLOAD_EXT_RE = /\.(pdf|doc|docx|xls|xlsx|ppt|pptx|zip|rar|csv|txt|rtf|7z|tar|gz)(\?|#|$)/i;
   function isDownloadNavigation(href, el) {
@@ -91,7 +93,7 @@ window.__NETACAD_EXTENSION=true;
     if (!str) return "";
     return str.replace(/[\u200B-\u200D\uFEFF]/g, "").replace(/[\u2000-\u200F\u2028-\u202F]/g, "").replace(/\u00A0/g, " ").replace(/<!--[\s\S]*?-->/g, "").replace(/<[^>]*>?/gm, "").replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"').replace(/[\u2013\u2014]/g, "-").replace(/\bmicrowaves\b/g, "microwave").replace(/\s+/g, " ").trim().toLowerCase();
   }
-  var CHOOSE_COUNT_RE = /(?:choose|select)\s+(two|three|four|five|six|seven|eight|all(?:\s+that\s+apply)?|one)/i;
+  var CHOOSE_COUNT_RE = /(?:choose|select|which|what(?:\s+are)?|identify|name)\s+(two|three|four|five|six|seven|eight|all(?:\s+that\s+apply)?|one)\b/i;
   var CHOOSE_INSTRUCTION_RE = /^(?:choose|select)\s+(?:two|three|four|five|six|seven|eight|all(?:\s+that\s+apply)?|one)\b/i;
   function isChooseInstructionText(text) {
     const t = normalizeText(text || "");
@@ -341,9 +343,9 @@ window.__NETACAD_EXTENSION=true;
       };
     });
   }
-  var SCROLL_PERCENTAGE = 0.5;
+  var SCROLL_PERCENTAGE = 0.9;
   var BOTTOM_PERCENT = 99;
-  var TICK_MS_SCROLL = 150;
+  var TICK_MS_SCROLL = 50;
   var TICK_MS_ASSESSMENT = 500;
   var TICK_MS_AFTER_ACTION = 300;
   var TICK_MS_POST_ACTION_POLL = 300;
@@ -510,6 +512,7 @@ window.__NETACAD_EXTENSION=true;
     const expanded = [];
     const qNorm = normalizeText(question || "");
     const isOrderQuestion = /\b(correct order|in order|proper order|sequence)\b/i.test(qNorm);
+    const isMultipleChoice = expectedSelectionCount(qNorm, []) > 1 || /\b(?:choose|select)\s+all\b/i.test(qNorm);
     for (const raw of answers || []) {
       const n = normalizeText(raw);
       if (!n.includes(",") || isBracketedLiteral(raw)) {
@@ -517,7 +520,7 @@ window.__NETACAD_EXTENSION=true;
         continue;
       }
       const parts = n.split(",").map((p) => p.trim()).filter(Boolean);
-      const looksLikeOptionList = parts.length >= 2 && parts.length <= 8 && parts.every((p) => p.length > 0 && p.length < 80) && !isOrderQuestion && !isProseCommaAnswer(parts);
+      const looksLikeOptionList = isMultipleChoice && parts.length >= 2 && parts.length <= 8 && parts.every((p) => p.length > 0 && p.length < 80) && !isOrderQuestion && !isProseCommaAnswer(parts);
       if (looksLikeOptionList) {
         expanded.push(...parts);
       } else {
@@ -1614,7 +1617,7 @@ window.__NETACAD_EXTENSION=true;
       return true;
     }
     let active = true;
-    let sought = false;
+    let soughtTarget = null;
     runtime.isPaused = true;
     runtime.isVideoActive = true;
     setStatus("Video");
@@ -1635,10 +1638,21 @@ window.__NETACAD_EXTENSION=true;
       }
     };
     const seek = () => {
-      if (!active || sought || video.paused || !Number.isFinite(video.duration) || video.duration <= 0) return;
+      if (!active || video.paused || video.seeking || !Number.isFinite(video.duration) || video.duration <= 0) return;
+      const target = Math.max(0, video.duration - 2.5);
+      if (soughtTarget === target && video.currentTime >= target - 0.5) return;
+      if (video.seekable) {
+        let available = false;
+        for (const ranges of [video.seekable, video.buffered]) {
+          for (let i = 0; i < (ranges?.length || 0); i++) {
+            if (ranges.start(i) <= target && ranges.end(i) >= target) available = true;
+          }
+        }
+        if (!available) return;
+      }
       try {
-        video.currentTime = Math.max(0, video.duration - 2.5);
-        sought = true;
+        soughtTarget = target;
+        video.currentTime = target;
       } catch {
         finish(false, "Video error");
       }
@@ -1647,6 +1661,9 @@ window.__NETACAD_EXTENSION=true;
       ["loadedmetadata", seek],
       ["durationchange", seek],
       ["playing", seek],
+      ["progress", seek],
+      ["canplay", seek],
+      ["seeked", seek],
       ["ended", () => finish(true)],
       ["error", () => finish(false, "Video error")]
     ];
@@ -1676,12 +1693,14 @@ window.__NETACAD_EXTENSION=true;
     return true;
   }
   function createContentHelpers(doc, win, assessment) {
-    const { elementVisibilityRatio, isElementSubstantiallyVisible, isAssessmentResultVisible, isOnQuestionSlide } = assessment;
+    const { isElementSubstantiallyVisible, isAssessmentResultVisible, isOnQuestionSlide } = assessment;
     const posterAttempts = /* @__PURE__ */ new WeakMap();
     function tryOpenVideo() {
       for (const button of deepQuerySelectorAll(".media-poster .vjs-big-play-button", doc)) {
         const container = button.closest(".video-container");
-        if (!container || container.querySelector("video")) continue;
+        if (!container) continue;
+        const video = container.querySelector("video");
+        if (video && !isVideoHidden(video)) continue;
         if (!isElementSubstantiallyVisible(button, 0.35)) continue;
         const poster = button.closest(".media-poster");
         const lastClick = posterAttempts.get(button);
@@ -1727,17 +1746,12 @@ window.__NETACAD_EXTENSION=true;
       const player = getVideoPlayer(video);
       const rect = player.getBoundingClientRect();
       if (rect.width < 64 || rect.height < 48) return false;
-      const vis = elementVisibilityRatio(player, elWindow);
-      if (vis < 0.4) return false;
       const vh = elWindow.innerHeight || doc.documentElement.clientHeight;
       const vw = elWindow.innerWidth || doc.documentElement.clientWidth;
-      const cy = rect.top + rect.height / 2;
-      const cx = rect.left + rect.width / 2;
-      const inset = 12;
-      if (cy < inset || cy > vh - inset || cx < inset || cx > vw - inset) return false;
-      const block = video.closest('block-view, [class*="block"]');
-      if (block && elementVisibilityRatio(block, elWindow) < 0.2) return false;
-      return true;
+      const visibleW = Math.max(0, Math.min(rect.left + rect.width, vw) - Math.max(rect.left, 0));
+      const visibleH = Math.max(0, Math.min(rect.top + rect.height, vh) - Math.max(rect.top, 0));
+      const availableArea = Math.min(rect.width, vw) * Math.min(rect.height, vh);
+      return availableArea > 0 && visibleW * visibleH / availableArea >= 0.4;
     }
     function findScrollContainer() {
       const scrollingElement = doc.scrollingElement || doc.documentElement;
@@ -1791,7 +1805,7 @@ window.__NETACAD_EXTENSION=true;
       }
       function scrollByStep(amount) {
         if (scrollContainer.useWindow) win.scrollBy({ top: amount, behavior: "instant" });
-        else scrollContainer.element.scrollTop += amount;
+        else scrollContainer.element.scrollBy({ top: amount, behavior: "instant" });
       }
       function isAtScrollBottom() {
         if (getScrollPercent() < BOTTOM_PERCENT && getMaxScrollPx() > 5) return false;
@@ -1806,7 +1820,7 @@ window.__NETACAD_EXTENSION=true;
         if (scrollContainer.useWindow) {
           win.scrollTo({ top: max, behavior: "instant" });
         } else {
-          scrollContainer.element.scrollTop = max;
+          scrollContainer.element.scrollTo({ top: max, behavior: "instant" });
         }
         const docMax = Math.max(
           doc.documentElement.scrollHeight,
@@ -2654,6 +2668,7 @@ window.__NETACAD_EXTENSION=true;
     startRunner();
   }
   window.__netacadRunner = {
+    version,
     start: startRunner,
     stop: stopRunner,
     isRunning: isRunnerActive,

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { tryHandleCheckExercise } from '../runner/src/check-exercise.js';
 import { tryHandlePythonExercise } from '../runner/src/python-exercise.js';
+import { initDatabases } from '../runner/src/db.js';
 import { isQuestionAnswered, selectMcqOptions, trySubmitAndAdvance } from '../runner/src/solver.js';
 
 function textNode(textContent) {
@@ -170,6 +171,32 @@ test('single-choice radio needs only one choice even with several database alias
     assert.equal(f.checked.size, 1);
     assert.equal(isQuestionAnswered(f.q, f.answers), true);
 });
+
+test('single-choice answers containing commas survive database loading and match the full option', () => {
+    const question = 'Which option describes malicious code running on user devices?';
+    const answer = 'Virus, worm, or Trojan horse';
+    const f = fixture({ type: 'radio', question, options: [answer, 'Firewall', 'VPN'] });
+    globalThis.window = { top: { document: f.doc } };
+    globalThis.RAW_DB = { '1.2.6': [{ question, answers: [answer] }] };
+    const databases = initDatabases();
+    const entry = databases.lookupEntryCached(databases.getActiveDb(f.doc), question, '');
+    assert.deepEqual(entry.answers, [answer.toLowerCase()]);
+    assert.equal(selectMcqOptions(f.q, entry.answers, question), true);
+    assert.deepEqual(f.clicks, [answer]);
+});
+
+for (const question of ['Which traits? (Choose two)', 'What are two traits?', 'Which traits? Select all that apply.']) {
+    test(`comma-separated multiple answers still expand: ${question}`, () => {
+        const f = fixture({ question, options: ['Reliable', 'Connection-oriented', 'Stateless'] });
+        globalThis.window = { top: { document: f.doc } };
+        globalThis.RAW_DB = { local: [{ question, answers: ['Reliable, connection-oriented'] }] };
+        const databases = initDatabases();
+        const entry = databases.lookupEntryCached(databases.getActiveDb(f.doc), question, '');
+        assert.deepEqual(entry.answers, ['reliable', 'connection-oriented']);
+        assert.equal(selectMcqOptions(f.q, entry.answers, question), true);
+        assert.equal(isQuestionAnswered(f.q, entry.answers), true);
+    });
+}
 
 test('batch selection yields to a fresh tick when the first click replaces the DOM', () => {
     const f = fixture({ rerender: true });

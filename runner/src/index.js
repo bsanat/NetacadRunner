@@ -16,9 +16,11 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+import { version } from '../../package.json';
 import { isRunnerActive, restartRunner, startRunner, stopRunner } from './runner-api.js';
 
 window.__netacadRunner = {
+    version,
     start: startRunner,
     stop: stopRunner,
     isRunning: isRunnerActive,

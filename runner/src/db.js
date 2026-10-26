@@ -17,6 +17,7 @@
 */
 
 import {
+    expectedSelectionCount,
     expandLayerAliases,
     isGenericPtQuestion,
     normalizeText,
@@ -46,6 +47,7 @@ function expandAnswerList(answers, question) {
     const expanded = [];
     const qNorm = normalizeText(question || '');
     const isOrderQuestion = /\b(correct order|in order|proper order|sequence)\b/i.test(qNorm);
+    const isMultipleChoice = expectedSelectionCount(qNorm, []) > 1 || /\b(?:choose|select)\s+all\b/i.test(qNorm);
 
     for (const raw of answers || []) {
         const n = normalizeText(raw);
@@ -54,7 +56,8 @@ function expandAnswerList(answers, question) {
             continue;
         }
         const parts = n.split(',').map(p => p.trim()).filter(Boolean);
-        const looksLikeOptionList = parts.length >= 2 && parts.length <= 8 &&
+        const looksLikeOptionList = isMultipleChoice &&
+            parts.length >= 2 && parts.length <= 8 &&
             parts.every(p => p.length > 0 && p.length < 80) &&
             !isOrderQuestion &&
             !isProseCommaAnswer(parts);

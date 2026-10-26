@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createContentHelpers } from '../runner/src/content.js';
+import { createAssessmentHelpers } from '../runner/src/assessment.js';
 import { tryHandleModuleIntroVideo } from '../runner/src/module-intro-video.js';
 import { skipVideo } from '../runner/src/video.js';
 
@@ -169,7 +170,7 @@ function contentFixture(video) {
 }
 
 function posterFixture() {
-    const { doc, content } = contentFixture(null);
+    const { doc, content, win } = contentFixture(null);
     let nativeVideo = null;
     let clicks = 0;
     const poster = {
@@ -188,7 +189,8 @@ function posterFixture() {
         if (selector === 'video') return nativeVideo ? [nativeVideo] : [];
         return [];
     };
-    return { content, poster, button, clicks: () => clicks, load: () => { nativeVideo = new Video(); } };
+    return { content, poster, button, win, clicks: () => clicks,
+        load: () => { nativeVideo = new Video(); return nativeVideo; } };
 }
 
 test('lazy poster opens even though no native video exists yet', () => {
@@ -222,6 +224,67 @@ test('lazy poster outside the visible area is not clicked', () => {
     button.visible = false;
     assert.equal(content.tryOpenVideo(), false);
     assert.equal(clicks(), 0);
+});
+
+test('visible poster starts a pre-created native player that is still hidden', () => {
+    const f = posterFixture();
+    f.load();
+    f.win.getComputedStyle = () => ({ display: 'none' });
+    assert.equal(f.content.tryOpenVideo(), true);
+    assert.equal(f.clicks(), 1);
+});
+
+for (const largePlayer of [false, true]) {
+    test(largePlayer ? 'a player taller than the viewport can still be processed' :
+        'a visible player is not rejected because its parent block is long', () => {
+        const video = new Video();
+        const { doc, win } = contentFixture(video);
+        video.player.getBoundingClientRect = () => ({
+            width: 640, height: largePlayer ? 2400 : 360,
+            top: largePlayer ? -400 : 100, left: 0, right: 640,
+            bottom: largePlayer ? 2000 : 460,
+        });
+        const block = {
+            getBoundingClientRect: () => ({ width: 1000, height: 5000, top: 0, left: 0, right: 1000, bottom: 5000 }),
+        };
+        const closest = video.closest.bind(video);
+        video.closest = selector => selector.includes('[class*="block"]') ? block : closest(selector);
+        const content = createContentHelpers(doc, win, createAssessmentHelpers(doc, win));
+        assert.equal(content.getNextPendingVideo(new Set()), video);
+    });
+}
+
+test('seek waits for the target range and retries when buffering makes it available', t => {
+    const { video, start } = setup(t);
+    let rangeEnd = 5;
+    video.seekable = { length: 1, start: () => 0, end: () => rangeEnd };
+    start();
+    assert.deepEqual(video.seeks, []);
+    rangeEnd = 120;
+    video.dispatchEvent(new Event('progress'));
+    video.dispatchEvent(new Event('canplay'));
+    assert.deepEqual(video.seeks, [117.5]);
+});
+
+test('an empty seekable range waits and a changed duration updates the seek target', t => {
+    const { video, start } = setup(t);
+    video.seekable = { length: 0, start: () => 0, end: () => video.duration };
+    start();
+    assert.deepEqual(video.seeks, []);
+    video.seekable.length = 1;
+    video.dispatchEvent(new Event('canplay'));
+    assert.deepEqual(video.seeks, [117.5]);
+    video.duration = 300;
+    video.dispatchEvent(new Event('durationchange'));
+    assert.deepEqual(video.seeks, [117.5, 297.5]);
+});
+
+test('fully buffered media can seek even if the server exposes an empty seekable range', t => {
+    const { video, start } = setup(t);
+    video.seekable = { length: 1, start: () => 0, end: () => 0 };
+    video.buffered = { length: 1, start: () => 0, end: () => 120 };
+    start();
+    assert.deepEqual(video.seeks, [117.5]);
 });
 
 test('player cover is eligible even when the native video has no size yet', () => {

@@ -22,13 +22,15 @@ import { getVideoPlayer, skipVideo } from './video.js';
 import { setStatus } from './status.js';
 
 export function createContentHelpers(doc, win, assessment) {
-    const { elementVisibilityRatio, isElementSubstantiallyVisible, isAssessmentResultVisible, isOnQuestionSlide } = assessment;
+    const { isElementSubstantiallyVisible, isAssessmentResultVisible, isOnQuestionSlide } = assessment;
     const posterAttempts = new WeakMap();
 
     function tryOpenVideo() {
         for (const button of deepQuerySelectorAll('.media-poster .vjs-big-play-button', doc)) {
             const container = button.closest('.video-container');
-            if (!container || container.querySelector('video')) continue;
+            if (!container) continue;
+            const video = container.querySelector('video');
+            if (video && !isVideoHidden(video)) continue;
             if (!isElementSubstantiallyVisible(button, 0.35)) continue;
 
             const poster = button.closest('.media-poster');
@@ -83,20 +85,12 @@ export function createContentHelpers(doc, win, assessment) {
         const rect = player.getBoundingClientRect();
         if (rect.width < 64 || rect.height < 48) return false;
 
-        const vis = elementVisibilityRatio(player, elWindow);
-        if (vis < 0.4) return false;
-
         const vh = elWindow.innerHeight || doc.documentElement.clientHeight;
         const vw = elWindow.innerWidth || doc.documentElement.clientWidth;
-        const cy = rect.top + rect.height / 2;
-        const cx = rect.left + rect.width / 2;
-        const inset = 12;
-        if (cy < inset || cy > vh - inset || cx < inset || cx > vw - inset) return false;
-
-        const block = video.closest('block-view, [class*="block"]');
-        if (block && elementVisibilityRatio(block, elWindow) < 0.2) return false;
-
-        return true;
+        const visibleW = Math.max(0, Math.min(rect.left + rect.width, vw) - Math.max(rect.left, 0));
+        const visibleH = Math.max(0, Math.min(rect.top + rect.height, vh) - Math.max(rect.top, 0));
+        const availableArea = Math.min(rect.width, vw) * Math.min(rect.height, vh);
+        return availableArea > 0 && visibleW * visibleH / availableArea >= 0.4;
     }
 
     function findScrollContainer() {
@@ -160,7 +154,7 @@ export function createContentHelpers(doc, win, assessment) {
 
         function scrollByStep(amount) {
             if (scrollContainer.useWindow) win.scrollBy({ top: amount, behavior: 'instant' });
-            else scrollContainer.element.scrollTop += amount;
+            else scrollContainer.element.scrollBy({ top: amount, behavior: 'instant' });
         }
 
         function isAtScrollBottom() {
@@ -177,7 +171,7 @@ export function createContentHelpers(doc, win, assessment) {
             if (scrollContainer.useWindow) {
                 win.scrollTo({ top: max, behavior: 'instant' });
             } else {
-                scrollContainer.element.scrollTop = max;
+                scrollContainer.element.scrollTo({ top: max, behavior: 'instant' });
             }
             const docMax = Math.max(
                 doc.documentElement.scrollHeight,

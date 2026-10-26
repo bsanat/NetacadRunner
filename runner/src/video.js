@@ -21,7 +21,7 @@ export function skipVideo(video, player, runtime, processedVideos) {
     }
 
     let active = true;
-    let sought = false;
+    let soughtTarget = null;
     runtime.isPaused = true;
     runtime.isVideoActive = true;
     setStatus('Video');
@@ -44,10 +44,21 @@ export function skipVideo(video, player, runtime, processedVideos) {
     };
 
     const seek = () => {
-        if (!active || sought || video.paused || !Number.isFinite(video.duration) || video.duration <= 0) return;
+        if (!active || video.paused || video.seeking || !Number.isFinite(video.duration) || video.duration <= 0) return;
+        const target = Math.max(0, video.duration - 2.5);
+        if (soughtTarget === target && video.currentTime >= target - 0.5) return;
+        if (video.seekable) {
+            let available = false;
+            for (const ranges of [video.seekable, video.buffered]) {
+                for (let i = 0; i < (ranges?.length || 0); i++) {
+                    if (ranges.start(i) <= target && ranges.end(i) >= target) available = true;
+                }
+            }
+            if (!available) return;
+        }
         try {
-            video.currentTime = Math.max(0, video.duration - 2.5);
-            sought = true;
+            soughtTarget = target;
+            video.currentTime = target;
         } catch {
             finish(false, 'Video error');
         }
@@ -56,6 +67,9 @@ export function skipVideo(video, player, runtime, processedVideos) {
         ['loadedmetadata', seek],
         ['durationchange', seek],
         ['playing', seek],
+        ['progress', seek],
+        ['canplay', seek],
+        ['seeked', seek],
         ['ended', () => finish(true)],
         ['error', () => finish(false, 'Video error')],
     ];

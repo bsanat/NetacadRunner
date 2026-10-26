@@ -82,6 +82,7 @@ async function getPageRunnerState(tabId) {
         func: () => ({
             hasRunner: !!window.__netacadRunner,
             course: window.__netacadLoadedCourse || null,
+            version: window.__netacadRunner?.version || null,
         }),
     });
     return result || { hasRunner: false, course: null };
@@ -93,7 +94,7 @@ async function injectAndStart(tabId, course) {
 
     const page = await getPageRunnerState(tabId);
 
-    if (page.hasRunner && page.course === course) {
+    if (page.hasRunner && page.course === course && page.version === chrome.runtime.getManifest().version) {
         await injectStatusBridge(tabId);
         await chrome.scripting.executeScript({
             target: { tabId },
@@ -105,7 +106,7 @@ async function injectAndStart(tabId, course) {
         return;
     }
 
-    if (page.hasRunner && page.course !== course) {
+    if (page.hasRunner) {
         await chrome.storage.local.set({ pendingCourse: course, pendingTabId: tabId });
         await appendStatus('Reload');
         await chrome.tabs.reload(tabId);

@@ -40,7 +40,7 @@ export function normalizeText(str) {
 }
 
 const CHOOSE_COUNT_RE =
-    /(?:choose|select)\s+(two|three|four|five|six|seven|eight|all(?:\s+that\s+apply)?|one)/i;
+    /(?:choose|select|which|what(?:\s+are)?|identify|name)\s+(two|three|four|five|six|seven|eight|all(?:\s+that\s+apply)?|one)\b/i;
 
 const CHOOSE_INSTRUCTION_RE =
     /^(?:choose|select)\s+(?:two|three|four|five|six|seven|eight|all(?:\s+that\s+apply)?|one)\b/i;
