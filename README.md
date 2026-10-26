@@ -185,6 +185,10 @@ npm test
 
 Лицензия — **[GNU GPL v3 или более поздняя версия](LICENSE)**. При распространении сохраняйте уведомления об авторстве и лицензию и предоставляйте соответствующий исходный код согласно GPL.
 
+
+
 ---
+
+by Sanat Bogenbayev
 
 <p align="center">by <a href="https://github.com/bsanat"><strong>bsanat</strong></a></p>
