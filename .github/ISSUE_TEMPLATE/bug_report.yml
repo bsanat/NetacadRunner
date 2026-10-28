@@ -1,0 +1,49 @@
+name: Bug report / Сообщить об ошибке
+description: "Помогите повторить сбой: курс, версия и шаги."
+title: "[Bug]: "
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Версия Netacad-Runner
+      description: Указана на карточке расширения в Chrome.
+      placeholder: "Например: 1.0.5"
+    validations:
+      required: true
+  - type: input
+    id: course
+    attributes:
+      label: Курс
+      placeholder: "Например: CCNA 1 — Introduction to Networks"
+    validations:
+      required: true
+  - type: input
+    id: lesson
+    attributes:
+      label: Урок, видео или вопрос (если известен)
+      placeholder: "Номер или название, например 3.2.1"
+  - type: textarea
+    id: steps
+    attributes:
+      label: Как повторить
+      description: Что открыли, что нажали и на каком действии Runner остановился?
+      placeholder: "1. Открыл курс…\n2. Выбрал базу…\n3. Нажал «Запустить»…"
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Ожидаемое и фактическое поведение
+      placeholder: "Ожидал…, вместо этого…"
+    validations:
+      required: true
+  - type: input
+    id: status
+    attributes:
+      label: Последнее состояние в журнале действий
+      placeholder: "Например: Тест / Ожидание видео / Прокрутка"
+  - type: input
+    id: environment
+    attributes:
+      label: Браузер и операционная система
+      placeholder: "Например: Chrome 141, Windows 11"

@@ -19,10 +19,11 @@
 <div align="center">
   <img src="extension/icons/icon-128.png" width="88" alt="Логотип Netacad-Runner">
   <h1>Netacad-Runner</h1>
-  <p><strong>Помощник для курсов NetAcad с понятным русским интерфейсом</strong></p>
+  <p><strong>Меньше ручных переходов по курсам Cisco NetAcad</strong></p>
+  <p>Chrome-расширение: навигация, работа с видео и ответы из встроенной базы.<br>Русский интерфейс · CCNA 1–3 · Python Essentials · Кибербезопасность · Анализ данных</p>
   <p>Версия 1.0.5 · Google Chrome · Manifest V3</p>
   <p>
-    <a href="https://github.com/bsanat/NetacadRunner/archive/refs/heads/main.zip"><strong>Скачать ZIP</strong></a>
+    <a href="https://github.com/bsanat/NetacadRunner/releases/latest"><strong>Скачать расширение</strong></a>
     &nbsp;·&nbsp;
     <a href="#установка">Установка</a>
     &nbsp;·&nbsp;
@@ -39,7 +40,22 @@
 
 Netacad-Runner помогает прокручивать материалы и переходить между страницами курса на [NetAcad](https://www.netacad.com), работать с видео и отвечать на поддерживаемые задания с помощью встроенных баз ответов. Текущее действие видно в журнале; обработку можно остановить кнопкой.
 
-**Для установки достаточно скачать архив и выбрать папку `extension`. Node.js, терминал и сборка не нужны.**
+**Установка без терминала:** скачайте готовый ZIP в [Releases](https://github.com/bsanat/NetacadRunner/releases/latest), распакуйте и выберите папку `extension` в Chrome. Node.js и сборка не нужны.
+
+- **Материалы курса:** автоматическая прокрутка и переходы между страницами.
+- **Видео:** запуск плеера, перемотка к концу и ожидание завершения.
+- **Поддерживаемые задания:** выбор и отправка ответов из встроенной базы.
+- **Управление:** кнопки «Запустить» / «Остановить» и журнал действий.
+
+<p align="center">
+  <img src="docs/images/interface.png" width="300" alt="Пример русского интерфейса Netacad-Runner: выбор курса, остановка и журнал действий">
+  <br><em>Пример интерфейса и журнала действий</em>
+</p>
+
+Базы ответов могут ошибаться; задания Packet Tracer выполняются вручную. Это независимый проект сообщества, основанный на [netacad-automation](https://github.com/yadavsaurabh1/netacad-automation).
+
+<details>
+<summary><strong>Последние исправления: 1.0.5 и 1.0.4</strong></summary>
 
 ### Что нового в 1.0.5
 
@@ -53,21 +69,23 @@ Netacad-Runner помогает прокручивать материалы и �
 - Исправлена остановка после первого ответа в вопросах с несколькими вариантами: Runner продолжает выбирать ответы и проверяет их количество перед отправкой.
 - Ускорена прокрутка материалов по сравнению с 1.0.3.
 
+</details>
+
 ## Установка
 
-Ниже — шесть шагов от скачивания до запуска. На скриншотах нужные элементы выделены **красным**. Показан macOS; в Windows выбирайте те же папки и кнопки Chrome.
+Ниже — шесть шагов от скачивания до запуска. На скриншотах нужные элементы выделены **красным**. Показан macOS; в Windows выбирайте те же папки и кнопки Chrome. Скриншоты сделаны с полным архивом исходников; у готового ZIP из Releases внешняя папка и имя файла могут отличаться. Для установки в обоих случаях нужна **`extension`**.
 
 ### 1. Скачайте архив
 
-Нажмите **[Скачать ZIP](https://github.com/bsanat/NetacadRunner/archive/refs/heads/main.zip)** или откройте [страницу проекта](https://github.com/bsanat/NetacadRunner) и выберите **Code → Download ZIP**.
+Откройте **[последний релиз](https://github.com/bsanat/NetacadRunner/releases/latest)** и в разделе **Assets** скачайте файл **`Netacad-Runner-1.0.5-extension.zip`**. Он содержит готовую папку `extension` и инструкцию.
 
-Дождитесь загрузки файла `NetacadRunner-main.zip`.
+Полный исходный код также доступен через **Code → Download ZIP** на [странице проекта](https://github.com/bsanat/NetacadRunner). В этом случае файл называется `NetacadRunner-main.zip`, как на скриншоте:
 
 <img src="docs/images/01-download.png" width="460" alt="Шаг 1: скачанный архив NetacadRunner-main.zip выделен красным">
 
 ### 2. Распакуйте и найдите extension
 
-Распакуйте архив: на macOS откройте ZIP двойным щелчком, в Windows нажмите правой кнопкой → **Извлечь всё**. Внутри папки `NetacadRunner-main` найдите **`extension`** — она выделена на скриншоте.
+Распакуйте архив: на macOS откройте ZIP двойным щелчком, в Windows нажмите правой кнопкой → **Извлечь всё**. В распакованном архиве найдите **`extension`** — она выделена на скриншоте.
 
 <img src="docs/images/02-extension-folder.png" width="760" alt="Шаг 2: папка extension внутри распакованного проекта выделена красной рамкой">
 
@@ -89,7 +107,7 @@ chrome://extensions
 
 ### 4. Выберите папку extension
 
-В открывшемся окне перейдите в распакованную папку `NetacadRunner-main`, выделите **`extension`** и нажмите **Выбрать**. В Windows кнопка может называться **Выбор папки**.
+В открывшемся окне перейдите в распакованную папку проекта, выделите **`extension`** и нажмите **Выбрать**. В Windows кнопка может называться **Выбор папки**.
 
 <img src="docs/images/04-select-extension.png" width="760" alt="Шаг 4: красным выделены папка extension и кнопка Выбрать">
 
@@ -190,6 +208,8 @@ npm test
 
 
 ## Авторство и лицензия
+
+Хотите предложить исправление или помочь проекту? Начните с [CONTRIBUTING.md](CONTRIBUTING.md). Для воспроизводимого сбоя используйте [форму сообщения об ошибке](https://github.com/bsanat/NetacadRunner/issues/new/choose).
 
 Основано на [netacad-automation](https://github.com/yadavsaurabh1/netacad-automation) — Copyright (C) 2026 **Saurabh Kumar Yadav**. Исходные уведомления об авторстве сохранены.
 
